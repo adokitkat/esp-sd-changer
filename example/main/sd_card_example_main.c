@@ -93,17 +93,20 @@ void app_main(void)
     // This initializes the slot without card detect (CD) and write protect (WP) signals.
     // Modify slot_config.gpio_cd and slot_config.gpio_wp if your board has these signals.
     sdmmc_slot_config_t slot_config = SDMMC_SLOT_CONFIG_DEFAULT();
-    
-    // Initialize SD Changer
-    sdchngr_handle_t changer = sdchngr_create();
-    
-    // Try to mount SD card in each SD slot
+
+    esp_sdchngr_dev_t device = SDCHNGR_DEFAULT();
+    esp_sdchngr_handle_t changer = (esp_sdchngr_handle_t)&device;
+    esp_sdchngr_init(changer);
+    uint8_t nDetected = 0;
+    uint8_t detected = 0;
+    esp_sdchngr_get_detected(changer, &nDetected, &detected);
+    ESP_LOGI(TAG, "Detected num %d mask %02x", nDetected, detected);
+
     for (size_t i = 0; i < 8; i++)
     {
         ESP_LOGI(TAG, "[SLOT %d]", i);
-        // Power up slot and attach it to bus
-        ret = sdchngr_set_power(changer, i, true);
-        ret = sdchngr_set_selected(changer, i, &slot_config);
+        ret = esp_sdchngr_set_power(changer, i, true);
+        ret = esp_sdchngr_set_selected(changer, i, &slot_config);
         if (ret != ESP_OK)
         {
             if (ret == ESP_ERR_NOT_FOUND)
@@ -191,19 +194,12 @@ void app_main(void)
         ESP_LOGI(TAG, "Card unmounted");
     }
 
-    // Finish up by getting powered and detected card status
-    uint8_t nDetected = 0;
-    uint8_t bDetected = 0;
-    ESP_ERROR_CHECK(sdchngr_get_detected(changer, &nDetected, &bDetected));
-    ESP_LOGI(TAG, "Detected count %d mask %02x", nDetected, bDetected);
-
+    // Finish up by getting powered card status
     uint8_t nPowered = 0;
     uint8_t bPowered = 0;
-    ESP_ERROR_CHECK(sdchngr_get_powered(changer, &nPowered, &bPowered));
+    ESP_ERROR_CHECK(esp_sdchngr_get_powered(changer, &nPowered, &bPowered));
     ESP_LOGI(TAG, "Powered count %d mask %02x", nPowered, bPowered);
 
-    uint8_t selectedSlot = 0;
-    ESP_ERROR_CHECK(sdchngr_get_selected(changer, &selectedSlot));
-    ESP_LOGI(TAG, "Last selected slot %d", selectedSlot);
+    ESP_LOGI(TAG, "Last selected slot %d", esp_sdchngr_get_selected(changer));
 
 }
