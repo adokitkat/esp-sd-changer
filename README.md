@@ -9,7 +9,7 @@ This project implements a **multi-slot SD card changer** interface using the ESP
 - Support for up to **8 SD card slots**
 - Software-controlled slot selection
 - **Power control** and **presence detection** of SD cards
-- Compatible with **ESP-IDF**
+- Compatible with **ESP-IDF v5.5 or newer**
 - Works with **SDMMC host interface**
 - Based on **SN74CB3Q3245** bus switch
 - Data bandwith up to 500 MHz
