@@ -63,7 +63,7 @@ typedef struct esp_sdchngr_dev
     uint8_t poweredSlots;
     sdmmc_slot_config_t portConfigs[2];
     mcp23017_handle_t mcps[2];
-    mcp23017_handle_t* curentMcp;
+    mcp23017_handle_t curentMcp;
     i2c_bus_handle_t i2c;
 } esp_sdchngr_dev_t;
 
@@ -83,7 +83,7 @@ esp_err_t esp_sdchngr_init(esp_sdchngr_handle_t handle);
  *
  * SD must be detected by handle to be selected
  * @param handle [IN] sdchanger config struct
- * @param slot [IN] SD card slot [1-8], 0 for none selected
+ * @param slot [IN] SD card slot [0-7]
  * @param slot_config [OUT] sdmmc slot config
  * @return
  *      - ESP_OK on success
@@ -109,7 +109,7 @@ esp_err_t esp_sdchngr_set_power(esp_sdchngr_handle_t handle, uint8_t slot, bool 
  * @brief Get number of selected slot
  *
  * @param handle configuration
- * @return [1-8] selected slot, 0 for none
+ * @return [0-7] last selected slot (0 if none was selected yet)
  */
 uint8_t esp_sdchngr_get_selected(esp_sdchngr_handle_t handle);
 
@@ -162,8 +162,26 @@ bool esp_sdchngr_is_powered(esp_sdchngr_handle_t handle, uint8_t slot);
  */
 bool esp_sdchngr_is_detected(esp_sdchngr_handle_t handle, uint8_t slot);
 
-//MV - MISSING DOC
+/**
+ * @brief Get the sdmmc slot config (port A or B pins) for a slot
+ *
+ * @param handle configuration
+ * @param slot sd card slot [0-7]
+ * @param slot_config [OUT] sdmmc slot config for the slot's port
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if handle or slot_config is null, or slot is out of range
+ */
 esp_err_t esp_sdchngr_set_port(esp_sdchngr_handle_t handle, uint8_t slot, sdmmc_slot_config_t *slot_config);
+/**
+ * @brief Set the handle's current MCP23017 (port A or B) for a slot
+ *
+ * @param handle configuration
+ * @param slot sd card slot [0-7]
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if handle is null or slot is out of range
+ */
 esp_err_t esp_sdchngr_set_mcp(esp_sdchngr_handle_t handle, uint8_t slot);
 
 #ifdef __cplusplus

@@ -100,9 +100,6 @@ esp_err_t esp_sdchngr_set_selected(esp_sdchngr_handle_t handle, uint8_t slot, sd
     // Set correct currentMcp
     ESP_ERROR_CHECK(esp_sdchngr_set_mcp(handle, slot));
 
-    // Number of slots - ???
-    //uint8_t gpio = (slot >= 4) ? (slot - 4) : slot;
-
     // Outputs are on GPIOB
     uint8_t current_gpio = mcp23017_read_io(handle->curentMcp, MCP23017_GPIOB);
     current_gpio |= 0b10101010; // Apply mask - odd bits are bus select
@@ -155,6 +152,7 @@ esp_err_t esp_sdchngr_get_detected(esp_sdchngr_handle_t handle, uint8_t *nDetect
 
     uint8_t porta = mcp23017_read_io(handle->mcps[0], MCP23017_GPIOA);
     uint8_t portb = mcp23017_read_io(handle->mcps[1], MCP23017_GPIOA);
+    *nDetected = 0;
     // Card detect inputs are on GPA0-3 only; GPA4-7 are unconnected and pulled up.
     porta &= 0x0F;
     portb &= 0x0F;
@@ -178,6 +176,7 @@ esp_err_t esp_sdchngr_get_powered(esp_sdchngr_handle_t handle, uint8_t *nPowered
     SDCHNGR_CHECK(handle != NULL && nPowered != NULL && slots != NULL, "invalid arg", ESP_ERR_INVALID_ARG);
 
     *slots = handle->poweredSlots;
+    *nPowered = 0;
     for (int i = 0; i < 8; ++i) {
         if (*slots & (1 << i)) {
             (*nPowered)++;
@@ -217,7 +216,7 @@ esp_err_t esp_sdchngr_set_port(esp_sdchngr_handle_t handle, uint8_t slot, sdmmc_
 {
     SDCHNGR_CHECK(handle != NULL && config != NULL, "invalid arg", ESP_ERR_INVALID_ARG);
 
-    if (slot > SD_SLOT_COUNT) {
+    if (slot >= SD_SLOT_COUNT) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -230,7 +229,7 @@ esp_err_t esp_sdchngr_set_mcp(esp_sdchngr_handle_t handle, uint8_t slot)
 {
     SDCHNGR_CHECK(handle != NULL, "invalid arg", ESP_ERR_INVALID_ARG);
 
-    if (slot > 8) {
+    if (slot >= SD_SLOT_COUNT) {
         return ESP_ERR_INVALID_ARG;
     }
 
