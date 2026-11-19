@@ -111,7 +111,7 @@ esp_err_t esp_sdchngr_set_power(esp_sdchngr_handle_t handle, uint8_t slot, bool 
  * @brief Get number of selected slot
  *
  * @param handle configuration
- * @return [0-7] last selected slot (0 if none was selected yet)
+ * @return [0-7] last selected slot (0 if none was selected yet, or if handle is null)
  */
 uint8_t esp_sdchngr_get_selected(esp_sdchngr_handle_t handle);
 
@@ -142,7 +142,7 @@ esp_err_t esp_sdchngr_get_powered(esp_sdchngr_handle_t handle, uint8_t *nPowered
  *
  * @param handle configuration
  * @param slot sd card slot
- * @return true if slot is selected
+ * @return true if slot is selected, false otherwise or if handle is null
  */
 bool esp_sdchngr_is_selected(esp_sdchngr_handle_t handle, uint8_t slot);
 
@@ -151,7 +151,7 @@ bool esp_sdchngr_is_selected(esp_sdchngr_handle_t handle, uint8_t slot);
  *
  * @param handle configuration
  * @param slot sd card slot
- * @return true if card is powered
+ * @return true if card is powered, false otherwise or if handle is null
  */
 bool esp_sdchngr_is_powered(esp_sdchngr_handle_t handle, uint8_t slot);
 
@@ -160,7 +160,7 @@ bool esp_sdchngr_is_powered(esp_sdchngr_handle_t handle, uint8_t slot);
  *
  * @param handle configuration
  * @param slot sd card slot
- * @return true if card is detected
+ * @return true if card is detected, false otherwise or if handle is null
  */
 bool esp_sdchngr_is_detected(esp_sdchngr_handle_t handle, uint8_t slot);
 

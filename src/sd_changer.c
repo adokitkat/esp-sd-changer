@@ -145,6 +145,7 @@ esp_err_t esp_sdchngr_set_power(esp_sdchngr_handle_t handle, uint8_t slot, bool 
 
 uint8_t esp_sdchngr_get_selected(esp_sdchngr_handle_t handle)
 {
+    SDCHNGR_CHECK(handle != NULL, "Invalid arg", 0);
     return handle->selectedSlot;
 }
 
@@ -190,13 +191,13 @@ esp_err_t esp_sdchngr_get_powered(esp_sdchngr_handle_t handle, uint8_t *nPowered
 
 bool esp_sdchngr_is_selected(esp_sdchngr_handle_t handle, uint8_t slot)
 {
-    //SDCHNGR_CHECK(handle != NULL, "invalid arg", ESP_ERR_INVALID_ARG);
+    SDCHNGR_CHECK(handle != NULL, "Invalid arg", false);
     return slot == handle->selectedSlot;
 }
 
 bool esp_sdchngr_is_powered(esp_sdchngr_handle_t handle, uint8_t slot)
 {
-    //SDCHNGR_CHECK(handle != NULL, "invalid arg", ESP_ERR_INVALID_ARG);
+    SDCHNGR_CHECK(handle != NULL, "Invalid arg", false);
     ESP_LOGD(TAG, "Powered: " BYTE_TO_BINARY_PATTERN " slot %d", BYTE_TO_BINARY(handle->poweredSlots), slot);
 
     return bitcheck(handle->poweredSlots, slot);
@@ -204,11 +205,13 @@ bool esp_sdchngr_is_powered(esp_sdchngr_handle_t handle, uint8_t slot)
 
 bool esp_sdchngr_is_detected(esp_sdchngr_handle_t handle, uint8_t slot)
 {
-    //SDCHNGR_CHECK(handle != NULL, "invalid arg", ESP_ERR_INVALID_ARG);
+    SDCHNGR_CHECK(handle != NULL, "Invalid arg", false);
     uint8_t nDetected = 0;
     uint8_t detected = 0;
 
-    esp_sdchngr_get_detected(handle, &nDetected, &detected);
+    if (esp_sdchngr_get_detected(handle, &nDetected, &detected) != ESP_OK) {
+        return false;
+    }
     ESP_LOGD(TAG, "Slot %d detected [%d]", slot, bitcheck(detected, slot) > 0);
 
     return bitcheck(detected, slot) > 0;
