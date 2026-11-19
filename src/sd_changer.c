@@ -1,4 +1,8 @@
 #include "sd_changer.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+
+#define SD_POWER_OFF_DELAY_MS 250
 
 #define SD_MCP_PULLUPS MCP23017_PIN0 |     \
                            MCP23017_PIN1 | \
@@ -69,6 +73,10 @@ esp_err_t esp_sdchngr_init(esp_sdchngr_handle_t handle)
     mcp23017_set_pullup(handle->mcps[1], SD_MCP_PULLUPS);
     mcp23017_write_io(handle->mcps[0], 0xFF, MCP23017_GPIOB); // Off state
     mcp23017_write_io(handle->mcps[1], 0xFF, MCP23017_GPIOB);
+    // MCP23017 keeps its outputs across an ESP reset (its RESET pin is tied to 3V3),
+    // so cards may still be powered from the previous run. Keep them off long
+    // enough to fully reset before anything powers them on again.
+    vTaskDelay(pdMS_TO_TICKS(SD_POWER_OFF_DELAY_MS));
 
     ESP_LOGI(TAG, "Initialized\n");
     return ESP_OK;
