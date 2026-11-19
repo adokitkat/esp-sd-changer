@@ -70,7 +70,11 @@ void app_main(void)
     // If format_if_mount_failed is set to true, SD card will be partitioned and
     // formatted in case when mounting fails.
     esp_vfs_fat_sdmmc_mount_config_t mount_config = {
+#ifdef CONFIG_EXAMPLE_FORMAT_IF_MOUNT_FAILED
+        .format_if_mount_failed = true,
+#else
         .format_if_mount_failed = false,
+#endif
         .max_files = 5,
         .allocation_unit_size = 16 * 1024};
     sdmmc_card_t *card;
