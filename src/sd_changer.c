@@ -1,5 +1,6 @@
 #include "sd_changer.h"
 #include "esp_check.h"
+#include "driver/i2c_master.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
@@ -53,6 +54,19 @@ esp_err_t esp_sdchngr_init(esp_sdchngr_handle_t handle)
         .scl_pullup_en = false,
         .clk_flags = I2C_CLK_SRC_DEFAULT,
         .master.clk_speed = 100000};
+
+    // Create the bus with the IDF driver first. Otherwise i2c_bus_create() probes
+    // for an existing bus and the driver logs an error when there isn't one.
+    i2c_master_bus_config_t bus_config = {
+        .i2c_port = I2C_NUM_0,
+        .sda_io_num = SD_I2C_SDA,
+        .scl_io_num = SD_I2C_SCL,
+        .clk_source = I2C_CLK_SRC_DEFAULT,
+        .glitch_ignore_cnt = 7,
+        .flags.enable_internal_pullup = false,
+    };
+    i2c_master_bus_handle_t bus_handle = NULL;
+    ESP_RETURN_ON_ERROR(i2c_new_master_bus(&bus_config, &bus_handle), TAG, "Failed to create I2C master bus");
 
     handle->i2c = i2c_bus_create(I2C_NUM_0, &conf_i2c);
     ESP_RETURN_ON_FALSE(handle->i2c != NULL, ESP_FAIL, TAG, "Failed to create I2C bus");
