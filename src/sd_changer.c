@@ -177,7 +177,7 @@ esp_err_t esp_sdchngr_get_powered(esp_sdchngr_handle_t handle, uint8_t *nPowered
 {
     SDCHNGR_CHECK(handle != NULL && nPowered != NULL && slots != NULL, "invalid arg", ESP_ERR_INVALID_ARG);
 
-    slots = &handle->poweredSlots;
+    *slots = handle->poweredSlots;
     for (int i = 0; i < 8; ++i) {
         if (*slots & (1 << i)) {
             (*nPowered)++;
