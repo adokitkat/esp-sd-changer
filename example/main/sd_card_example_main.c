@@ -31,7 +31,7 @@ static esp_err_t s_example_write_file(const char *path, char *data)
         ESP_LOGE(TAG, "Failed to open file for writing");
         return ESP_FAIL;
     }
-    fprintf(f, data);
+    fputs(data, f);
     fclose(f);
     ESP_LOGI(TAG, "File written");
 
@@ -60,6 +60,58 @@ static esp_err_t s_example_read_file(const char *path)
     ESP_LOGI(TAG, "Read from file: '%s'", line);
 
     return ESP_OK;
+}
+
+static esp_err_t s_example_test_files(sdmmc_card_t *card)
+{
+    esp_err_t ret;
+
+    // Use POSIX and C standard library functions to work with files:
+
+    // First create a file.
+    const char *file_hello = MOUNT_POINT "/hello.txt";
+    char data[EXAMPLE_MAX_CHAR_SIZE];
+    snprintf(data, EXAMPLE_MAX_CHAR_SIZE, "%s %s!\n", "Hello", card->cid.name);
+    ret = s_example_write_file(file_hello, data);
+    if (ret != ESP_OK)
+    {
+        return ret;
+    }
+
+    const char *file_foo = MOUNT_POINT "/foo.txt";
+    // Check if destination file exists before renaming
+    struct stat st;
+    if (stat(file_foo, &st) == 0)
+    {
+        // Delete it if it exists
+        unlink(file_foo);
+    }
+
+    // Rename original file
+    ESP_LOGI(TAG, "Renaming file %s to %s", file_hello, file_foo);
+    if (rename(file_hello, file_foo) != 0)
+    {
+        ESP_LOGE(TAG, "Rename failed");
+        return ESP_FAIL;
+    }
+
+    ret = s_example_read_file(file_foo);
+    if (ret != ESP_OK)
+    {
+        return ret;
+    }
+
+    const char *file_nihao = MOUNT_POINT "/nihao.txt";
+    memset(data, 0, EXAMPLE_MAX_CHAR_SIZE);
+    snprintf(data, EXAMPLE_MAX_CHAR_SIZE, "%s %s!\n", "Nihao", card->cid.name);
+    ret = s_example_write_file(file_nihao, data);
+    if (ret != ESP_OK)
+    {
+        return ret;
+    }
+
+    // Open file for reading
+    return s_example_read_file(file_nihao);
 }
 
 void app_main(void)
@@ -110,7 +162,10 @@ void app_main(void)
     {
         ESP_LOGI(TAG, "[SLOT %d]", i);
         ret = esp_sdchngr_set_power(changer, i, true);
-        ret = esp_sdchngr_set_selected(changer, i, &slot_config);
+        if (ret == ESP_OK)
+        {
+            ret = esp_sdchngr_set_selected(changer, i, &slot_config);
+        }
         if (ret != ESP_OK)
         {
             if (ret == ESP_ERR_NOT_FOUND)
@@ -135,6 +190,7 @@ void app_main(void)
                               "Make sure SD card lines have pull-up resistors in place.",
                          esp_err_to_name(ret));
             }
+            esp_sdchngr_set_power(changer, i, false);
             continue;
         }
         ESP_LOGI(TAG, "Filesystem mounted");
@@ -142,60 +198,16 @@ void app_main(void)
         // Card has been initialized, print its properties
         sdmmc_card_print_info(stdout, card);
 
-        // Use POSIX and C standard library functions to work with files:
-
-        // First create a file.
-        const char *file_hello = MOUNT_POINT "/hello.txt";
-        char data[EXAMPLE_MAX_CHAR_SIZE];
-        snprintf(data, EXAMPLE_MAX_CHAR_SIZE, "%s %s!\n", "Hello", card->cid.name);
-        ret = s_example_write_file(file_hello, data);
+        ret = s_example_test_files(card);
         if (ret != ESP_OK)
         {
-            continue;
-        }
-
-        const char *file_foo = MOUNT_POINT "/foo.txt";
-        // Check if destination file exists before renaming
-        struct stat st;
-        if (stat(file_foo, &st) == 0)
-        {
-            // Delete it if it exists
-            unlink(file_foo);
-        }
-
-        // Rename original file
-        ESP_LOGI(TAG, "Renaming file %s to %s", file_hello, file_foo);
-        if (rename(file_hello, file_foo) != 0)
-        {
-            ESP_LOGE(TAG, "Rename failed");
-            continue;
-        }
-
-        ret = s_example_read_file(file_foo);
-        if (ret != ESP_OK)
-        {
-            continue;
-        }
-
-        const char *file_nihao = MOUNT_POINT "/nihao.txt";
-        memset(data, 0, EXAMPLE_MAX_CHAR_SIZE);
-        snprintf(data, EXAMPLE_MAX_CHAR_SIZE, "%s %s!\n", "Nihao", card->cid.name);
-        ret = s_example_write_file(file_nihao, data);
-        if (ret != ESP_OK)
-        {
-            continue;
-        }
-
-        // Open file for reading
-        ret = s_example_read_file(file_nihao);
-        if (ret != ESP_OK)
-        {
-            continue;;
+            ESP_LOGE(TAG, "[SLOT %d] File test failed", i);
         }
 
         // All done, unmount partition and disable SDMMC peripheral
         esp_vfs_fat_sdcard_unmount(mount_point, card);
         ESP_LOGI(TAG, "Card unmounted");
+        esp_sdchngr_set_power(changer, i, false);
     }
 
     // Finish up by getting powered card status
