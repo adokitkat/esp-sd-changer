@@ -155,9 +155,9 @@ esp_err_t esp_sdchngr_get_detected(esp_sdchngr_handle_t handle, uint8_t *nDetect
 
     uint8_t porta = mcp23017_read_io(handle->mcps[0], MCP23017_GPIOA);
     uint8_t portb = mcp23017_read_io(handle->mcps[1], MCP23017_GPIOA);
-    // porta = porta & 0x0F; // Only bits 0–3
-    // portb = portb & 0x0F;
-    *slots = 0;
+    // Card detect inputs are on GPA0-3 only; GPA4-7 are unconnected and pulled up.
+    porta &= 0x0F;
+    portb &= 0x0F;
     // Combine 4 bits from both ports so the result is
     // 0b[BBBBAAAA]
     *slots = (portb << 4) | porta;
