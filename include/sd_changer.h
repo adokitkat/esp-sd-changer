@@ -71,10 +71,12 @@ typedef esp_sdchngr_dev_t* esp_sdchngr_handle_t;
 
 /**
  * @brief Initialize SD Changer handle
- * Initializes sdmmc_host and i2c handle
+ * Creates the I2C bus and both MCP23017 expanders, then powers off all slots
+ * and waits for the cards to reset.
  * @return
  *      - ESP_OK on success
- *
+ *      - ESP_ERR_INVALID_ARG if handle is null
+ *      - ESP_FAIL or an I2C error if the I2C bus or an MCP23017 can't be set up
  */
 esp_err_t esp_sdchngr_init(esp_sdchngr_handle_t handle);
 

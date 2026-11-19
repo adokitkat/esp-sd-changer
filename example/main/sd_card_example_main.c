@@ -152,7 +152,7 @@ void app_main(void)
 
     esp_sdchngr_dev_t device = SDCHNGR_DEFAULT();
     esp_sdchngr_handle_t changer = (esp_sdchngr_handle_t)&device;
-    esp_sdchngr_init(changer);
+    ESP_ERROR_CHECK(esp_sdchngr_init(changer));
     uint8_t nDetected = 0;
     uint8_t detected = 0;
     esp_sdchngr_get_detected(changer, &nDetected, &detected);

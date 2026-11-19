@@ -1,4 +1,5 @@
 #include "sd_changer.h"
+#include "esp_check.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
@@ -54,6 +55,7 @@ esp_err_t esp_sdchngr_init(esp_sdchngr_handle_t handle)
         .master.clk_speed = 100000};
 
     handle->i2c = i2c_bus_create(I2C_NUM_0, &conf_i2c);
+    ESP_RETURN_ON_FALSE(handle->i2c != NULL, ESP_FAIL, TAG, "Failed to create I2C bus");
 
     uint32_t speed = i2c_bus_get_current_clk_speed(handle->i2c);
     ESP_LOGI(TAG, "I2C speed %ld", speed);
@@ -65,14 +67,14 @@ esp_err_t esp_sdchngr_init(esp_sdchngr_handle_t handle)
     handle->mcps[0] = mcp23017_create(handle->i2c, MCP23017_I2C_ADDRESS_DEFAULT + 6);
     handle->mcps[1] = mcp23017_create(handle->i2c, MCP23017_I2C_ADDRESS_DEFAULT + 4);
 
-    mcp23017_set_io_dir(handle->mcps[0], 0xFF, MCP23017_GPIOA); // Set as input pins
-    mcp23017_set_io_dir(handle->mcps[0], 0x00, MCP23017_GPIOB); // Set as output pins
-    mcp23017_set_io_dir(handle->mcps[1], 0xFF, MCP23017_GPIOA);
-    mcp23017_set_io_dir(handle->mcps[1], 0x00, MCP23017_GPIOB);
-    mcp23017_set_pullup(handle->mcps[0], SD_MCP_PULLUPS);
-    mcp23017_set_pullup(handle->mcps[1], SD_MCP_PULLUPS);
-    mcp23017_write_io(handle->mcps[0], 0xFF, MCP23017_GPIOB); // Off state
-    mcp23017_write_io(handle->mcps[1], 0xFF, MCP23017_GPIOB);
+    for (int i = 0; i < SD_PORT_COUNT; i++) {
+        mcp23017_handle_t mcp = handle->mcps[i];
+        ESP_RETURN_ON_FALSE(mcp != NULL, ESP_FAIL, TAG, "Failed to create MCP23017 %d", i);
+        ESP_RETURN_ON_ERROR(mcp23017_set_io_dir(mcp, 0xFF, MCP23017_GPIOA), TAG, "MCP23017 %d: set GPIOA dir", i); // Inputs
+        ESP_RETURN_ON_ERROR(mcp23017_set_io_dir(mcp, 0x00, MCP23017_GPIOB), TAG, "MCP23017 %d: set GPIOB dir", i); // Outputs
+        ESP_RETURN_ON_ERROR(mcp23017_set_pullup(mcp, SD_MCP_PULLUPS), TAG, "MCP23017 %d: set pull-ups", i);
+        ESP_RETURN_ON_ERROR(mcp23017_write_io(mcp, 0xFF, MCP23017_GPIOB), TAG, "MCP23017 %d: power off slots", i); // Off state
+    }
     // MCP23017 keeps its outputs across an ESP reset (its RESET pin is tied to 3V3),
     // so cards may still be powered from the previous run. Keep them off long
     // enough to fully reset before anything powers them on again.
